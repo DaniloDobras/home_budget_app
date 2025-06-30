@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "home-budget-app"
+version = "0.1.0"
+description = ""
+authors = ["Danilo Dobras <danilodobras97@gmail.com>"]
+readme = "README.md"
+packages = [{include = "home_budget_app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sqlalchemy = "^2.0.41"
+psycopg2-binary = "^2.9.10"
+fastapi = "^0.115.14"
+uvicorn = "^0.34.3"
+python-dotenv = "^1.1.1"
+alembic = "^1.16.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
