@@ -13,7 +13,7 @@ class User(Base):
     hashed_password = Column(String)
     balance = Column(Float, default=1000)
     categories = relationship("Category", back_populates="owner")
-    expenses = relationship("Bill", back_populates="owner")
+    bills = relationship("Bill", back_populates="owner")
 
 
 class Category(Base):
@@ -22,7 +22,7 @@ class Category(Base):
     name = Column(String, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="categories")
-    expenses = relationship("Bill", back_populates="category")
+    bills = relationship("Bill", back_populates="category")
 
 
 class Bill(Base):
