@@ -1,14 +1,4 @@
-def login_and_get_token(client):
-    client.post("/auth/register", json={
-        "username": "testuser",
-        "password": "testpass"
-    })
-    response = client.post("/auth/token", json={
-        "username": "testuser",
-        "password": "testpass"
-    })
-    assert response.status_code == 200, response.text
-    return response.json()["access_token"]
+from app.tests.test_utils import login_and_get_token, create_category_and_get_id
 
 
 def test_create_category(test_client):
@@ -30,16 +20,6 @@ def test_get_all_categories(test_client):
     )
     assert response.status_code == 200
     assert isinstance(response.json(), list)
-
-
-def create_category_and_get_id(client, token, name="food"):
-    response = client.post(
-        "/categories/",
-        json={"name": name},
-        headers={"Authorization": f"Bearer {token}"}
-    )
-    assert response.status_code == 200
-    return response.json()["id"]
 
 
 def test_get_category_by_id(test_client):

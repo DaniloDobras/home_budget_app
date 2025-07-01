@@ -13,7 +13,11 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
 
 def override_get_db():
@@ -32,8 +36,8 @@ def test_client():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
-    hashed_password = hash_password("testpass")
-    user = User(username="testuser", hashed_password=hashed_password)
+    hashed_password = hash_password("test_pass")
+    user = User(username="test_user", hashed_password=hashed_password)
     db.add(user)
     db.commit()
     db.refresh(user)
