@@ -134,7 +134,7 @@ def get_min_price_bill(
 @router.get("/by/range", response_model=list[BillResponse])
 def get_bills_within_range(
     min_price: float = Query(..., ge=0),
-    max_price: float = Query(..., gt=0),
+    max_price: float = Query(..., ge=0.01),
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ):
