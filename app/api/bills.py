@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 
 from app.api.schema.bill_schema import BillRequest, BillResponse
@@ -96,3 +97,60 @@ def delete_bill(
     db.delete(bill)
     db.commit()
     return bill
+
+
+@router.get("/by/max", response_model=BillResponse)
+def get_max_price_bill(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    bill = (
+        db.query(models.Bill)
+        .filter_by(user_id=user.id)
+        .order_by(desc(models.Bill.amount))
+        .first()
+    )
+    if not bill:
+        raise HTTPException(status_code=404, detail="No bills found")
+    return bill
+
+
+@router.get("/by/min", response_model=BillResponse)
+def get_min_price_bill(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    bill = (
+        db.query(models.Bill)
+        .filter_by(user_id=user.id)
+        .order_by(asc(models.Bill.amount))
+        .first()
+    )
+    if not bill:
+        raise HTTPException(status_code=404, detail="No bills found")
+    return bill
+
+
+@router.get("/by/range", response_model=list[BillResponse])
+def get_bills_within_range(
+    min_price: float = Query(..., ge=0),
+    max_price: float = Query(..., gt=0),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    if min_price > max_price:
+        raise HTTPException(
+            status_code=400,
+            detail="min_price cannot be greater than max_price")
+
+    bills = (
+        db.query(models.Bill)
+        .filter(
+            models.Bill.user_id == user.id,
+            models.Bill.amount >= min_price,
+            models.Bill.amount <= max_price,
+        )
+        .order_by(models.Bill.amount)
+        .all()
+    )
+    return bills
