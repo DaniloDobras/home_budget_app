@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 
-from app.api.schema.bill_schema import BillRequest, BillResponse
+from app.api.schema.bill_schema import BillRequest, BillResponse, TopUpRequest, \
+    TopUpResponse
 from app.db import models
 from app.db.database import get_db
 from app.utils.security import get_current_user
 
-router = APIRouter(prefix="/bills", tags=["bills"])
+router = APIRouter(prefix="/expenses", tags=["expenses"])
 
 
 @router.post("/", response_model=BillResponse)
@@ -154,3 +155,15 @@ def get_bills_within_range(
         .all()
     )
     return bills
+
+
+@router.post("/top-up", response_model=TopUpResponse)
+def top_up_balance(
+    request: TopUpRequest,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    user.balance += request.amount
+    db.commit()
+    db.refresh(user)
+    return {"message": "Balance topped up", "new_balance": user.balance}
