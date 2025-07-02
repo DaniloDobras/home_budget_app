@@ -1,4 +1,4 @@
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -13,29 +13,37 @@ router = APIRouter(prefix="/stats", tags=["statistics"])
 
 @router.get("/{days}")
 def get_statistic(
-        days: int,
-        db: Session = Depends(get_db),
-        user: models.User = Depends(get_current_user),
+    days: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
 ):
-    today = date.today()
-    from_date = today - timedelta(days=days)
+    now = datetime.utcnow()
+    from_date = now - timedelta(days=days)
 
-    total_spent = (db.query(func.coalesce(func.sum(models.Bill.amount), 0)).
-                   filter(
+    total_spent = db.query(func.coalesce(func.sum(models.Bill.amount), 0)).filter(
         models.Bill.user_id == user.id,
         models.Bill.date >= from_date,
-        models.Bill.date <= today,
-        models.Bill.amount > 0
-    ).scalar())
+        models.Bill.date <= now,
+        models.Bill.amount > 0,
+        models.Bill.top_up == False
+    ).scalar()
+
+    total_earned = db.query(func.coalesce(func.sum(models.Bill.amount), 0)).filter(
+        models.Bill.user_id == user.id,
+        models.Bill.date >= from_date,
+        models.Bill.date <= now,
+        models.Bill.top_up == True
+    ).scalar()
 
     count_over_100 = db.query(func.count()).filter(
         models.Bill.user_id == user.id,
         models.Bill.date >= from_date,
-        models.Bill.date <= today,
+        models.Bill.date <= now,
         models.Bill.amount > 100
     ).scalar()
 
     return {
-        "total_spent_last_month": total_spent,
+        f"total_spent_in_{days}": total_spent,
+        f"total_earned_in_{days}": total_earned,
         "count_bills_over_100": count_over_100
     }
