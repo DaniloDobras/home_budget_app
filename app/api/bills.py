@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 
-from app.api.schema.bill_schema import BillRequest, BillResponse, TopUpRequest, \
-    TopUpResponse
+from app.api.schema.bill_schema import (BillRequest, BillResponse,
+                                        UpdateBillRequest)
 from app.db import models
 from app.db.database import get_db
 from app.utils.security import get_current_user
@@ -25,10 +26,14 @@ def create_bill(
         amount=bill.amount,
         date=bill.date,
         category_id=bill.category_id,
-        user_id=user.id
+        user_id=user.id,
+        top_up=bill.top_up
     )
 
-    user.balance -= bill.amount
+    if bill.top_up:
+        user.balance += bill.amount
+    else:
+        user.balance -= bill.amount
     db.add(new_bill)
     db.commit()
     db.refresh(new_bill)
@@ -58,7 +63,7 @@ def get_bill(
 @router.put("/{bill_id}", response_model=BillResponse)
 def update_bill(
     bill_id: int,
-    updated: BillRequest,
+    updated: UpdateBillRequest,
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ):
@@ -78,7 +83,10 @@ def update_bill(
     bill.date = updated.date
     bill.category_id = updated.category_id
 
-    user.balance -= balance_diff
+    if bill.top_up:
+        user.balance += balance_diff
+    else:
+        user.balance -= balance_diff
     db.commit()
     db.refresh(bill)
     return bill
@@ -90,11 +98,20 @@ def delete_bill(
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ):
-    bill = db.query(models.Bill).filter_by(id=bill_id, user_id=user.id).first()
+    bill = (
+        db.query(models.Bill)
+        .options(joinedload(models.Bill.category))
+        .filter_by(id=bill_id, user_id=user.id)
+        .first()
+    )
+
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
 
-    user.balance += bill.amount
+    if bill.top_up:
+        user.balance -= bill.amount
+    else:
+        user.balance += bill.amount
     db.delete(bill)
     db.commit()
     return bill
@@ -155,15 +172,3 @@ def get_bills_within_range(
         .all()
     )
     return bills
-
-
-@router.post("/top-up", response_model=TopUpResponse)
-def top_up_balance(
-    request: TopUpRequest,
-    db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user),
-):
-    user.balance += request.amount
-    db.commit()
-    db.refresh(user)
-    return {"message": "Balance topped up", "new_balance": user.balance}

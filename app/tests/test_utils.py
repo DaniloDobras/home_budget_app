@@ -41,7 +41,7 @@ def create_bill_and_get_id(
         description="Groceries"
 ):
     response = client.post(
-        "/bills/",
+        "/expenses/",
         json={
             "description": description,
             "amount": amount,
