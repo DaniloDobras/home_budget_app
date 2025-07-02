@@ -1,4 +1,4 @@
-from datetime import timedelta, date, datetime
+from datetime import timedelta, datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -20,20 +20,22 @@ def get_statistic(
     now = datetime.utcnow()
     from_date = now - timedelta(days=days)
 
-    total_spent = db.query(func.coalesce(func.sum(models.Bill.amount), 0)).filter(
+    total_spent = (db.query(func.coalesce(func.sum(models.Bill.amount), 0)).
+                   filter(
         models.Bill.user_id == user.id,
         models.Bill.date >= from_date,
         models.Bill.date <= now,
         models.Bill.amount > 0,
         models.Bill.top_up == False
-    ).scalar()
+    ).scalar())
 
-    total_earned = db.query(func.coalesce(func.sum(models.Bill.amount), 0)).filter(
+    total_earned = (db.query(func.coalesce(func.sum(models.Bill.amount), 0)).
+                    filter(
         models.Bill.user_id == user.id,
         models.Bill.date >= from_date,
         models.Bill.date <= now,
         models.Bill.top_up == True
-    ).scalar()
+    ).scalar())
 
     count_over_100 = db.query(func.count()).filter(
         models.Bill.user_id == user.id,
