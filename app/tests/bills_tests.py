@@ -9,7 +9,7 @@ def test_create_bill(test_client):
     token = login_and_get_token(test_client)
     category_id = create_category_and_get_id(test_client, token)
     response = test_client.post(
-        "/bills/",
+        "/expenses/",
         json={
             "description": "Grocery shopping",
             "amount": 200.0,
@@ -22,7 +22,7 @@ def test_create_bill(test_client):
     data = response.json()
     assert data["description"] == "Grocery shopping"
     assert data["amount"] == 200.0
-    assert data["category_id"] == category_id
+    assert data["category"]["id"] == category_id
 
 
 def test_get_all_bills(test_client):
@@ -31,7 +31,7 @@ def test_get_all_bills(test_client):
     create_bill_and_get_id(test_client, token, category_id)
 
     response = test_client.get(
-        "/bills/",
+        "/expenses/",
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200
@@ -44,7 +44,7 @@ def test_get_bill_by_id(test_client):
     bill_id, _ = create_bill_and_get_id(test_client, token, category_id)
 
     response = test_client.get(
-        f"/bills/{bill_id}",
+        f"/expenses/{bill_id}",
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200
@@ -62,7 +62,7 @@ def test_update_bill(test_client):
     )
 
     response = test_client.put(
-        f"/bills/{bill_id}",
+        f"/expenses/{bill_id}",
         json={
             "description": "Updated expense",
             "amount": 50.0,
@@ -83,13 +83,13 @@ def test_delete_bill(test_client):
     bill_id, _ = create_bill_and_get_id(test_client, token, category_id)
 
     response = test_client.delete(
-        f"/bills/{bill_id}",
+        f"/expenses/{bill_id}",
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200
 
     response = test_client.get(
-        f"/bills/{bill_id}",
+        f"/expenses/{bill_id}",
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 404
@@ -124,7 +124,7 @@ def test_balance_after_deleting_bill(test_client):
     assert balance_after_creation == initial_balance - amount
 
     test_client.delete(
-        f"/bills/{bill_id}",
+        f"/expenses/{bill_id}",
         headers={"Authorization": f"Bearer {token}"}
     )
 
@@ -147,7 +147,7 @@ def test_balance_after_updating_bill(test_client):
 
     balance_after_creation = get_user_balance_from_db("test_user")
     test_client.put(
-        f"/bills/{bill_id}",
+        f"/expenses/{bill_id}",
         json={
             "description": "Updated to cheaper expense",
             "amount": new_amount,

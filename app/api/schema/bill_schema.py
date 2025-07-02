@@ -10,19 +10,19 @@ class BillRequest(BaseModel):
     amount: float
     date: datetime = Field(default_factory=datetime.utcnow)
     category_id: int
+    top_up: bool = Field(default=False)
+
+
+class UpdateBillRequest(BaseModel):
+    description: str
+    amount: float
+    date: datetime = Field(default_factory=datetime.utcnow)
+    category_id: int
 
 
 class BillResponse(BaseModel):
     id: int
     user_id: int
+    description: str
+    amount: float
     category: CategoryResponse
-
-
-class TopUpRequest(BaseModel):
-    amount: float = Field(..., gt=0,
-                          description="Amount to top up (must be > 0)")
-
-
-class TopUpResponse(BaseModel):
-    message: str
-    new_balance: float
